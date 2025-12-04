@@ -1,0 +1,49 @@
+{
+	"author": "GUILMIN Leny",
+	"name": "template-nuxt-i18n",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "dotenv -e .env -o -- nuxt dev",
+		"build": "nuxt build",
+		"start": "node --env-file=.env .output/server/index.mjs",
+		"preview": "nuxt preview",
+		"postinstall": "nuxt prepare",
+		"prepare": "husky",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"docker:up": "docker-compose up -d",
+		"docker:down": "docker-compose down",
+		"docker:logs": "docker-compose logs -f mysql",
+		"db:generate": "dotenv -e .env -o -- prisma generate",
+		"db:migrate": "dotenv -e .env -o -- prisma migrate dev",
+		"db:migrate:prod": "dotenv -e .env.production -o -- prisma migrate deploy",
+		"db:push": "dotenv -e .env -o -- prisma db push",
+		"db:seed": "dotenv -e .env -o -- tsx prisma/seed.ts",
+		"db:reset": "dotenv -e .env -o -- prisma migrate reset --force && npm run db:seed",
+		"db:studio": "dotenv -e .env -o -- prisma studio",
+		"setup": "npm run docker:up && npm run db:generate && npm run db:push && npm run db:seed"
+	},
+	"dependencies": {
+		"@nuxtjs/i18n": "^10.2.0",
+		"@prisma/client": "^6.0.0",
+		"nuxt": "^4.2.1",
+		"vue": "^3.5.24",
+		"vue-router": "^4.6.3"
+	},
+	"devDependencies": {
+		"@nuxt/eslint": "^1.10.0",
+		"@prisma/nuxt": "^0.3.0",
+		"@types/node": "^24.10.1",
+		"dotenv-cli": "^11.0.0",
+		"eslint": "^9.39.1",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.6",
+		"prisma": "^6.0.0",
+		"tsx": "^4.7.0",
+		"typescript": "^5.9.3"
+	},
+	"lint-staged": {
+		"*.{js,ts,vue}": "eslint --fix"
+	}
+}
