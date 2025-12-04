@@ -1,5 +1,6 @@
 <template>
 	<div>
-		<p>{{ $t('hello') }}</p>
+		<NavBar />
+		<NuxtPage />
 	</div>
 </template>
