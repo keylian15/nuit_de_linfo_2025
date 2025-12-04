@@ -1,5 +1,5 @@
 <template>
 	<div>
-		<p>{{ $t('hello') }}</p>
+		<NuxtPage />
 	</div>
 </template>
