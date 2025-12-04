@@ -11,7 +11,21 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  username  String?
+}
+
+model Game {
+  id           Int      @id @default(autoincrement())
+  title        String
+  timer        Int
+  date         DateTime
+}
+
+model Succes {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  date        DateTime
 }
