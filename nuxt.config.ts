@@ -2,6 +2,7 @@ export default defineNuxtConfig({
 	modules: [
 		'@nuxtjs/i18n',
 		'@nuxt/eslint',
+		'@nuxt/ui',
 		// Activate @prisma/nuxt only in development
 		...(process.env.NODE_ENV === 'production' ? [] : ['@prisma/nuxt']),
 	],
