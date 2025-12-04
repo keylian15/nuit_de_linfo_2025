@@ -13,7 +13,11 @@ datasource db {
 model User {
   id        Int     @id @default(autoincrement())
   email     String  @unique
-  username  String?
+  username  String
+  password  String
+
+  games     Game[]
+  successes Success[]
 }
 
 model Game {
@@ -21,11 +25,15 @@ model Game {
   title        String
   timer        Int
   date         DateTime
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
 }
 
-model Succes {
+model Success {
   id          Int      @id @default(autoincrement())
   name        String
   description String
   date        DateTime
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
 }
