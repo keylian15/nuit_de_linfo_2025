@@ -6,7 +6,7 @@ import SuccessPopup from '@/../app/components/SuccessPopup.vue';
 const updatedAt = '5 décembre 2025';
 const siteName = 'Gamnirdfication';
 const company = 'J\'ai push dans le main';
-const email = 'contact@nird.example';
+const email = 'keylian59555@gmail.com';
 </script>
 
 <template>
