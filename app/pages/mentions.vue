@@ -36,7 +36,7 @@ const email = 'contact@nird.example';
 
 						<h2>3. Hébergeur</h2>
 						<p>
-							Hébergement : Fournisseur d'hébergement (nom, adresse, téléphone).
+							Le site est hébergé par <strong>TarzanHR</strong>.
 						</p>
 
 						<h2>4. Propriété intellectuelle</h2>
