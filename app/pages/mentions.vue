@@ -27,7 +27,6 @@ const email = 'contact@nird.example';
 						<h2>1. Éditeur du site</h2>
 						<p>
 							Le site est édité par <strong>{{ company }}</strong>.
-							Adresse : <em>Adresse postale complète</em>.
 						</p>
 
 						<h2>2. Directeur de la publication</h2>

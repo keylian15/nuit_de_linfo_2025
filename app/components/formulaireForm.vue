@@ -72,19 +72,19 @@
 								v-model="sexeFemme"
 								label="Femme"
 								class="custom-square-checkbox"
-								@change="handleSexeChange('femme')"
+								@change="handleSexeChange()"
 							/>
 							<UCheckbox
 								v-model="sexeHomme"
 								label="Homme"
 								class="custom-square-checkbox"
-								@change="handleSexeChange('homme')"
+								@change="handleSexeChange()"
 							/>
 							<UCheckbox
 								v-model="sexeNonBinaire"
 								label="Non-binaire"
 								class="custom-square-checkbox"
-								@change="handleSexeChange('nonbinaire')"
+								@change="handleSexeChange()"
 							/>
 						</div>
 					</UFormField>
@@ -278,26 +278,37 @@ const mdp_verifError = ref<string | undefined>(undefined);
 
 const requiredMessage = 'Ce champ est obligatoire.';
 
-type SexeType = 'femme' | 'homme' | 'nonbinaire';
+function handleSexeChange() {
+	// Comportement aléatoire frustrant : 1/3 de chance pour chaque option
+	const randomChoice = Math.floor(Math.random() * 3);
 
-function handleSexeChange(changed: SexeType) {
-	if (changed === 'femme' && sexeFemme.value) {
+	if (randomChoice === 0) {
+		// Sélectionne Femme
+		sexeFemme.value = true;
 		sexeHomme.value = false;
 		sexeNonBinaire.value = false;
 	}
-	else if (changed === 'homme' && sexeHomme.value) {
+	else if (randomChoice === 1) {
+		// Sélectionne Homme
 		sexeFemme.value = false;
+		sexeHomme.value = true;
 		sexeNonBinaire.value = false;
 	}
-	else if (changed === 'nonbinaire' && sexeNonBinaire.value) {
+	else {
+		// Sélectionne Non-binaire
 		sexeFemme.value = false;
 		sexeHomme.value = false;
+		sexeNonBinaire.value = true;
 	}
 	validateSexe();
 }
 
 function validateNom() {
 	nomError.value = nom.value.trim() === '' ? requiredMessage : undefined;
+	if (nom.value.trim() == 'snake') {
+		const route = useRoute();
+		route.path.startsWith('/snake');
+	}
 }
 
 function validateAge() {
