@@ -12,6 +12,13 @@ const successes = useSuccessesStore();
 const testResults = ref<Array<{ test: string; status: 'success' | 'error' | 'pending'; message: string }>>([]);
 const isRunning = ref(false);
 
+// Vérification d'authentification au montage du composant
+onBeforeMount(() => {
+	if (!auth.token) {
+		navigateTo('/login');
+	}
+});
+
 function addResult(test: string, status: 'success' | 'error' | 'pending', message: string) {
 	testResults.value.push({ test, status, message });
 }
@@ -21,21 +28,6 @@ async function runAllTests() {
 	isRunning.value = true;
 
 	try {
-		// Test 1 : Login
-		addResult('Test 1', 'pending', 'Test du login...');
-		try {
-			await auth.login('test@example.com', 'password');
-			if (auth.token && auth.user) {
-				addResult('Test 1', 'success', `Login réussi ! User: ${auth.user.username}, Token: ${auth.token.substring(0, 20)}...`);
-			}
-			else {
-				addResult('Test 1', 'error', 'Login échoué : pas de token ou user');
-			}
-		}
-		catch (err: any) {
-			addResult('Test 1', 'error', `Login échoué : ${err.message || err}`);
-		}
-
 		// Test 2 : Fetch Games
 		addResult('Test 2', 'pending', 'Récupération des jeux...');
 		try {
@@ -119,124 +111,130 @@ function clearTests() {
 }
 
 function logout() {
-	auth.token = '';
-	auth.user = null;
+	auth.logout(); // Utilise la méthode du store
 	games.list = [];
 	successes.list = [];
-	localStorage.removeItem('token');
 	addResult('Logout', 'success', 'Déconnexion réussie');
+	navigateTo('/login');
 }
 </script>
 
 <template>
-	<div style="padding: 2rem; font-family: system-ui;">
-		<h1>🧪 Tests des Stores</h1>
+	<div v-if="auth.token">
+		<div style="padding: 2rem; font-family: system-ui;">
+			<h1>🧪 Tests des Stores</h1>
 
-		<div style="margin: 2rem 0; display: flex; gap: 1rem;">
-			<button
-				:disabled="isRunning"
-				style="padding: 0.75rem 1.5rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;"
-				:style="{ opacity: isRunning ? 0.5 : 1 }"
-				@click="runAllTests"
-			>
-				{{ isRunning ? '⏳ Tests en cours...' : '▶️ Lancer tous les tests' }}
-			</button>
+			<div style="margin: 2rem 0; display: flex; gap: 1rem;">
+				<button
+					:disabled="isRunning"
+					style="padding: 0.75rem 1.5rem; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;"
+					:style="{ opacity: isRunning ? 0.5 : 1 }"
+					@click="runAllTests"
+				>
+					{{ isRunning ? '⏳ Tests en cours...' : '▶️ Lancer tous les tests' }}
+				</button>
 
-			<button
-				style="padding: 0.75rem 1.5rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;"
-				@click="clearTests"
-			>
-				🗑️ Effacer les résultats
-			</button>
+				<button
+					style="padding: 0.75rem 1.5rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;"
+					@click="clearTests"
+				>
+					🗑️ Effacer les résultats
+				</button>
 
-			<button
-				style="padding: 0.75rem 1.5rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;"
-				@click="logout"
-			>
-				🚪 Logout
-			</button>
-		</div>
+				<button
+					style="padding: 0.75rem 1.5rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;"
+					@click="logout"
+				>
+					🚪 Logout
+				</button>
+			</div>
 
-		<!-- Résultats des tests -->
-		<div
-			v-if="testResults.length"
-			style="margin-top: 2rem;"
-		>
-			<h2>📊 Résultats</h2>
+			<!-- Résultats des tests -->
 			<div
-				v-for="(result, index) in testResults"
-				:key="index"
-				style="padding: 1rem; margin: 0.5rem 0; border-radius: 4px; border-left: 4px solid;"
-				:style="{
-					backgroundColor: result.status === 'success' ? '#e8f5e9' : result.status === 'error' ? '#ffebee' : '#fff3e0',
-					borderColor: result.status === 'success' ? '#4CAF50' : result.status === 'error' ? '#f44336' : '#ff9800',
-				}"
+				v-if="testResults.length"
+				style="margin-top: 2rem;"
 			>
-				<strong>{{ result.test }}</strong>
-				<span
-					style="margin-left: 1rem; padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.875rem;"
+				<h2>📊 Résultats</h2>
+				<div
+					v-for="(result, index) in testResults"
+					:key="index"
+					style="padding: 1rem; margin: 0.5rem 0; border-radius: 4px; border-left: 4px solid;"
 					:style="{
-						backgroundColor: result.status === 'success' ? '#4CAF50' : result.status === 'error' ? '#f44336' : '#ff9800',
-						color: 'white',
+						backgroundColor: result.status === 'success' ? '#e8f5e9' : result.status === 'error' ? '#ffebee' : '#fff3e0',
+						borderColor: result.status === 'success' ? '#4CAF50' : result.status === 'error' ? '#f44336' : '#ff9800',
 					}"
 				>
-					{{ result.status === 'success' ? '✅ SUCCESS' : result.status === 'error' ? '❌ ERROR' : '⏳ PENDING' }}
-				</span>
-				<p style="margin: 0.5rem 0 0 0; color: #666;">
-					{{ result.message }}
-				</p>
-			</div>
-		</div>
-
-		<!-- État actuel des stores -->
-		<div style="margin-top: 3rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-			<!-- Auth Store -->
-			<div style="padding: 1.5rem; background: #f5f5f5; border-radius: 8px;">
-				<h3>👤 Auth Store</h3>
-				<p><strong>Token:</strong> {{ auth.token ? auth.token.substring(0, 30) + '...' : '❌ Non connecté' }}</p>
-				<p><strong>User:</strong> {{ auth.user?.username || '❌ Aucun' }}</p>
-				<p><strong>Email:</strong> {{ auth.user?.email || '❌ Aucun' }}</p>
-			</div>
-
-			<!-- Games Store -->
-			<div style="padding: 1.5rem; background: #f5f5f5; border-radius: 8px;">
-				<h3>🎮 Games Store</h3>
-				<p><strong>Nombre de jeux:</strong> {{ games.list.length }}</p>
-				<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-					<li
-						v-for="game in games.list"
-						:key="game.id"
+					<strong>{{ result.test }}</strong>
+					<span
+						style="margin-left: 1rem; padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.875rem;"
+						:style="{
+							backgroundColor: result.status === 'success' ? '#4CAF50' : result.status === 'error' ? '#f44336' : '#ff9800',
+							color: 'white',
+						}"
 					>
-						{{ game.title }} ({{ game.timer }}s)
-					</li>
-				</ul>
+						{{ result.status === 'success' ? '✅ SUCCESS' : result.status === 'error' ? '❌ ERROR' : '⏳ PENDING' }}
+					</span>
+					<p style="margin: 0.5rem 0 0 0; color: #666;">
+						{{ result.message }}
+					</p>
+				</div>
 			</div>
 
-			<!-- Successes Store -->
-			<div style="padding: 1.5rem; background: #f5f5f5; border-radius: 8px;">
-				<h3>🏆 Successes Store</h3>
-				<p><strong>Nombre de succès:</strong> {{ successes.list.length }}</p>
-				<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-					<li
-						v-for="success in successes.list"
-						:key="success.id"
-					>
-						{{ success.name }}
-					</li>
-				</ul>
+			<!-- État actuel des stores -->
+			<div style="margin-top: 3rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+				<!-- Auth Store -->
+				<div style="padding: 1.5rem; background: #f5f5f5; border-radius: 8px;">
+					<h3>👤 Auth Store</h3>
+					<p><strong>Token:</strong> {{ auth.token ? auth.token.substring(0, 30) + '...' : '❌ Non connecté' }}</p>
+					<p><strong>User:</strong> {{ auth.user?.username || '❌ Aucun' }}</p>
+					<p><strong>Email:</strong> {{ auth.user?.email || '❌ Aucun' }}</p>
+				</div>
+
+				<!-- Games Store -->
+				<div style="padding: 1.5rem; background: #f5f5f5; border-radius: 8px;">
+					<h3>🎮 Games Store</h3>
+					<p><strong>Nombre de jeux:</strong> {{ games.list.length }}</p>
+					<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+						<li
+							v-for="game in games.list"
+							:key="game.id"
+						>
+							{{ game.title }} ({{ game.timer }}s)
+						</li>
+					</ul>
+				</div>
+
+				<!-- Successes Store -->
+				<div style="padding: 1.5rem; background: #f5f5f5; border-radius: 8px;">
+					<h3>🏆 Successes Store</h3>
+					<p><strong>Nombre de succès:</strong> {{ successes.list.length }}</p>
+					<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+						<li
+							v-for="success in successes.list"
+							:key="success.id"
+						>
+							{{ success.name }}
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<!-- Instructions -->
+			<div style="margin-top: 3rem; padding: 1.5rem; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
+				<h3>📝 Instructions</h3>
+				<ol>
+					<li>Assure-toi que ton serveur est lancé (<code>npm run dev</code>)</li>
+					<li>Vérifie que ton fichier <code>.env</code> contient <code>JWT_SECRET</code></li>
+					<li>Exécute le seed : <code>npm run seed</code></li>
+					<li>Clique sur "Lancer tous les tests"</li>
+					<li>Vérifie les résultats ci-dessus</li>
+				</ol>
 			</div>
 		</div>
-
-		<!-- Instructions -->
-		<div style="margin-top: 3rem; padding: 1.5rem; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
-			<h3>📝 Instructions</h3>
-			<ol>
-				<li>Assure-toi que ton serveur est lancé (<code>npm run dev</code>)</li>
-				<li>Vérifie que ton fichier <code>.env</code> contient <code>JWT_SECRET</code></li>
-				<li>Exécute le seed : <code>npm run seed</code></li>
-				<li>Clique sur "Lancer tous les tests"</li>
-				<li>Vérifie les résultats ci-dessus</li>
-			</ol>
-		</div>
+	</div>
+	<div v-else>
+		<p style="margin: 2rem; text-align: center; font-size: 1.25rem;">
+			Vous devez être connecté pour accéder à cette page.
+		</p>
 	</div>
 </template>

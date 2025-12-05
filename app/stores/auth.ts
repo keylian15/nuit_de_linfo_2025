@@ -27,5 +27,21 @@ export const useAuthStore = defineStore('auth', {
 			this.setToken(data.token);
 			this.setUser(data.user);
 		},
+		async register(email: string, password: string) {
+			await $fetch('/api/auth/register', {
+				method: 'POST',
+				body: { email, password },
+			});
+		},
+		logout() {
+			this.token = '';
+			this.user = null;
+			if (import.meta.client) {
+				localStorage.removeItem('token');
+			}
+		},
+	},
+	getters: {
+		isAuthenticated: state => !!state.token,
 	},
 });
