@@ -1,5 +1,8 @@
 <template>
 	<div>
-		<p>skljd</p>
+		<!-- Checkbox component -->
+		<main class="max-w-7xl mx-auto px-4 py-12">
+			<choice-checkbox />
+		</main>
 	</div>
 </template>
