@@ -12,6 +12,11 @@ const items = computed<NavigationMenuItem[]>(() => [
 		active: route.path === '/',
 	},
 	{
+		label: 'Défis',
+		to: '/defis',
+		active: route.path.startsWith('/defis'),
+	},
+	{
 		label: 'Nird',
 		to: '/nird',
 		active: route.path.startsWith('/nird'),
@@ -20,6 +25,11 @@ const items = computed<NavigationMenuItem[]>(() => [
 		label: 'Lasergame',
 		to: '/game',
 		active: route.path.startsWith('/game'),
+	},
+	{
+		label: '',
+		to: '/contact',
+		active: route.path.startsWith('/contact'),
 	},
 ]);
 
