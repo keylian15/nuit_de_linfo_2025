@@ -433,7 +433,7 @@ onMounted(() => {
 				default: 'arcade',
 				arcade: {
 					gravity: { y: 0, x: 0 },
-					debug: true, // ✅ DEBUG ACTIVÉ pour voir les hitboxes
+					debug: false,
 				},
 			},
 			scale: {
