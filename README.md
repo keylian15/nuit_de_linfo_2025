@@ -20,6 +20,8 @@
                                                                                        ░██
 ```
 
+https://nuit-info.tarzanhr.fr/
+
 A production-ready **Nuxt 4** template with **i18n** support and optional **Prisma + MySQL** integration.
 
 > **💡 Note:** This template includes database support by default, but you can easily remove it if you only need a simple website. See [Working Without a Database](#working-without-a-database) below.
@@ -295,6 +297,6 @@ Files `*.js`, `*.ts`, `*.vue` are linted automatically on commit.
 
 ## License
 
-Private project - All rights reserved
+Public project - All rights public
 
 **Author:** GUILMIN Leny
