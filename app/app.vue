@@ -1,43 +1,39 @@
-<template>
-	<label for="select-list">Select<br></label>
+<script setup lang="ts">
+import type { SelectItem } from '@nuxt/ui';
 
-	<select
-		id="compo-select"
-		v-model="optionSelected"
-		name="compo"
-	>
-		<option value="">
-			--Choisir une option--
-		</option>
-		<option value="compo1">
-			Composant1
-		</option>
-		<option value="compo2">
-			Composant2
-		</option>
-		<option value="compo3">
-			Composant3
-		</option>
-		<option value="compo4">
-			Composant4
-		</option>
-		<option value="compo5">
-			Composant5
-		</option>
-		<option value="compo6">
-			Composant6
-		</option>
-	</select>
-
-	{{ optionSelected }}
-</template>
-
-<script setup>
-const optionSelected = ref('');
+const items = ref<SelectItem[]>([
+	{
+		label: 'Composant1',
+		value: 'compo1',
+	},
+	{
+		label: 'Composant2',
+		value: 'compo2',
+	},
+	{
+		label: 'Composant3',
+		value: 'compo3',
+	},
+	{
+		label: 'Composant4',
+		value: 'compo4',
+	},
+]);
+const value = ref('compo1');
 </script>
 
+<template>
+	<div>
+		<UApp>
+			<USelect
+				v-model="value"
+				:items="items"
+				class="w-48"
+			/>
+			Sélectionné : {{ value }}
+		</UApp>
+	</div>
+</template>
+
 <style>
-h1 {
-	color: #42b983;
-}
 </style>
