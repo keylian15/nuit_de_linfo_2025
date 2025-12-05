@@ -9,7 +9,7 @@
 		<li><a href="/nird"> Nird </a></li>
 		<li><a href="/lasergame"> Lasergame </a></li>
 	</header>
-  	<div>
+	<div>
 		<NuxtPage />
 	</div>
 </template>

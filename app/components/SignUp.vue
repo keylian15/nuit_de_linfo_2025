@@ -5,8 +5,7 @@ const Second_password = ref('');
 const errorMessageSignup = ref('');
 const successMessageSignup = ref('');
 
-const userStore = useUserStore();
-const { success, message } = storeToRefs(userStore);
+const authStore = useAuthStore();
 
 const isValidGmail = (email) => {
 	return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
@@ -14,6 +13,7 @@ const isValidGmail = (email) => {
 
 const handleRegister = async () => {
 	errorMessageSignup.value = '';
+	successMessageSignup.value = '';
 
 	if (!isValidGmail(email.value)) {
 		errorMessageSignup.value = 'Only Gmail addresses are allowed.';
@@ -25,58 +25,80 @@ const handleRegister = async () => {
 		return;
 	}
 
-	await userStore.register({
-		email: email.value,
-		password: password.value,
-	});
+	try {
+		await authStore.register(email.value, password.value);
 
-	if (!success.value) {
-		errorMessageSignup.value = message.value;
-		return;
+		successMessageSignup.value = 'Compte créé ! Connectez-vous';
+
+		// Réinitialiser les champs
+		email.value = '';
+		password.value = '';
+		Second_password.value = '';
 	}
-
-	// Création réussie
-	successMessageSignup.value = 'Compte créé ! Connectez-vous';
+	catch (err) {
+		errorMessageSignup.value = err.data?.message || 'Erreur lors de la création du compte';
+	}
 };
 </script>
 
 <template>
-	<n-form>
-		<n-form-item-row label="Email">
-			<n-input v-model:value="email" />
-		</n-form-item-row>
-		<n-form-item-row label="Password">
-			<n-input
-				v-model:value="password"
+	<div class="space-y-4">
+		<div>
+			<label class="block text-sm font-medium text-gray-700 mb-1">
+				Email
+			</label>
+			<input
+				v-model="email"
+				type="email"
+				placeholder="votre@gmail.com"
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+			>
+		</div>
+
+		<div>
+			<label class="block text-sm font-medium text-gray-700 mb-1">
+				Password
+			</label>
+			<input
+				v-model="password"
 				type="password"
-			/>
-		</n-form-item-row>
-		<n-form-item-row label="Reenter Password">
-			<n-input
-				v-model:value="Second_password"
+				placeholder="••••••••"
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+			>
+		</div>
+
+		<div>
+			<label class="block text-sm font-medium text-gray-700 mb-1">
+				Reenter Password
+			</label>
+			<input
+				v-model="Second_password"
 				type="password"
-			/>
-		</n-form-item-row>
-	</n-form>
-	<n-button
-		type="primary"
-		block
-		secondary
-		strong
-		@click="handleRegister"
-	>
-		Sign up
-	</n-button>
-	<n-text
-		v-if="errorMessageSignup"
-		type="error"
-	>
-		{{ errorMessageSignup }}
-	</n-text>
-	<n-text
-		v-if="successMessageSignup"
-		type="success"
-	>
-		{{ successMessageSignup }}
-	</n-text>
+				placeholder="••••••••"
+				class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+				@keyup.enter="handleRegister"
+			>
+		</div>
+
+		<button
+			class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+			@click="handleRegister"
+		>
+			Sign up
+		</button>
+
+		<p
+			v-if="errorMessageSignup"
+			class="text-red-600 text-sm text-center bg-red-50 py-2 px-4 rounded-lg"
+		>
+			{{ errorMessageSignup }}
+		</p>
+
+		<p
+			v-if="successMessageSignup"
+			class="text-green-600 text-sm text-center bg-green-50 py-2 px-4 rounded-lg"
+		>
+			{{ successMessageSignup }}
+		</p>
+	</div>
 </template>
