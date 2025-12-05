@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { NavigationMenuItem } from '@nuxt/ui';
+
 const route = useRoute();
 const items = computed<NavigationMenuItem[]>(() => [
 	{
 		label: 'Accueil',
-		to: '/accueil',
-		active: route.path.startsWith('/accueil'),
+		to: '/',
+		active: route.path.startsWith('/'),
 	},
 	{
 		label: 'Nird',
