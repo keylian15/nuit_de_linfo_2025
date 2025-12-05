@@ -21,6 +21,11 @@ const items = computed<NavigationMenuItem[]>(() => [
 		to: '/game',
 		active: route.path.startsWith('/game'),
 	},
+	{
+		label: 'Mentions légales',
+		to: '/mentions',
+		active: route.path === '/mentions',
+	},
 ]);
 
 // Charger le token depuis localStorage au montage
