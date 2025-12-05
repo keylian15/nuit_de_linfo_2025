@@ -4,14 +4,14 @@
 			<input
 				v-model="checking"
 				type="checkbox"
-				value="text1"
+				value="t1"
 				class="check1"
 			>
 			<label for="check1" />
 			<input
 				v-model="checking"
 				type="checkbox"
-				value="text2"
+				value="t2"
 				class="check2"
 			>
 			<label for="check2" />
