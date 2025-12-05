@@ -40,6 +40,17 @@ export const useAuthStore = defineStore('auth', {
 				localStorage.removeItem('token');
 			}
 		},
+		// 🆕 Nouvelle méthode pour charger le token au démarrage
+		initAuth() {
+			if (import.meta.client) {
+				const token = localStorage.getItem('token');
+				if (token) {
+					this.token = token;
+					// Optionnel : tu peux aussi récupérer les infos user depuis une API /me
+					// this.fetchCurrentUser();
+				}
+			}
+		},
 	},
 	getters: {
 		isAuthenticated: state => !!state.token,

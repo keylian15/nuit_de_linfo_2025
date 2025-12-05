@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
+const auth = useAuthStore();
+
 const items = computed<NavigationMenuItem[]>(() => [
 	{
 		label: 'Accueil',
 		to: '/',
-		active: route.path.startsWith('/'),
+		active: route.path === '/',
 	},
 	{
 		label: 'Nird',
@@ -19,6 +22,20 @@ const items = computed<NavigationMenuItem[]>(() => [
 		active: route.path.startsWith('/lasergame'),
 	},
 ]);
+
+// Charger le token depuis localStorage au montage
+onMounted(() => {
+	auth.initAuth();
+});
+
+const handleLogout = () => {
+	auth.logout();
+	navigateTo('/login');
+};
+
+const handleLogin = () => {
+	navigateTo('/login');
+};
 </script>
 
 <template>
@@ -32,19 +49,38 @@ const items = computed<NavigationMenuItem[]>(() => [
 		<template #right>
 			<UColorModeButton />
 
-			<UTooltip
-				text="Open on GitHub"
-				:kbds="['meta', 'G']"
+			<!-- Bouton de connexion (si non connecté) -->
+			<UButton
+				v-if="!auth.token"
+				icon="i-heroicons-arrow-right-on-rectangle"
+				color="primary"
+				variant="ghost"
+				@click="handleLogin"
 			>
+				Se connecter
+			</UButton>
+
+			<!-- Informations utilisateur et déconnexion (si connecté) -->
+			<div
+				v-else
+				class="flex items-center gap-2"
+			>
+				<UTooltip :text="`Connecté en tant que ${auth.user?.username || auth.user?.email}`">
+					<UAvatar
+						:alt="auth.user?.username"
+						size="sm"
+					/>
+				</UTooltip>
+
 				<UButton
-					color="neutral"
+					icon="i-heroicons-arrow-left-on-rectangle"
+					color="error"
 					variant="ghost"
-					to="https://github.com/nuxt/ui"
-					target="_blank"
-					icon="i-simple-icons-github"
-					aria-label="GitHub"
-				/>
-			</UTooltip>
+					@click="handleLogout"
+				>
+					Déconnexion
+				</UButton>
+			</div>
 		</template>
 	</UHeader>
 </template>
