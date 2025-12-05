@@ -9,7 +9,7 @@ export default defineNuxtConfig({
 	],
 	pages: true,
 	devtools: { enabled: process.env.NODE_ENV !== 'production' },
-	css: ['@/assets/css/main.css'],
+	css: ['~/assets/css/main.css'],
 	compatibilityDate: '2025-07-15',
 	eslint: {
 		config: {
