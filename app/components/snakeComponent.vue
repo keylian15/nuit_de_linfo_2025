@@ -45,6 +45,52 @@
 					Tapez SNAKE pour débloquer des secrets...
 				</p>
 
+				<div class="skin-select">
+					<h3>Choisir ton dauphin:</h3>
+					<div class="skin-buttons">
+						<button
+							:class="['skin-btn', { active: selectedSkin === 'dolphin1' }]"
+							@click="selectedSkin = 'dolphin1'"
+						>
+							<img
+								v-if="imagesLoaded.dolphin1"
+								:src="'/dolphin1.png'"
+								alt="Dauphin 1"
+								class="skin-preview"
+							>
+							<div
+								v-else
+								class="skin-placeholder"
+							>
+								🐬 Dauphin 1
+							</div>
+						</button>
+						<button
+							:class="['skin-btn', { active: selectedSkin === 'dolphin2' }]"
+							@click="selectedSkin = 'dolphin2'"
+						>
+							<img
+								v-if="imagesLoaded.dolphin2"
+								:src="'/dolphin2.png'"
+								alt="Dauphin 2"
+								class="skin-preview"
+							>
+							<div
+								v-else
+								class="skin-placeholder"
+							>
+								🐬 Dauphin 2
+							</div>
+						</button>
+					</div>
+					<p
+						v-if="!imagesLoaded.dolphin1 || !imagesLoaded.dolphin2"
+						class="skin-note"
+					>
+						📁 Placez vos images dans public/dolphin1.png et public/dolphin2.png
+					</p>
+				</div>
+
 				<div class="difficulty-select">
 					<h3>Choisir la difficulté:</h3>
 					<div class="difficulty-buttons">
@@ -196,11 +242,23 @@ const gameWon = ref(false);
 const gameLoopId = ref<number | null>(null);
 const showSecretMenu = ref(false);
 const secretKeyBuffer = ref('');
+let lastFrameTime = 0;
 
 // Game modes
 const neonMode = ref(false);
 const godMode = ref(false);
 const speedChallenge = ref(false);
+const selectedSkin = ref<'dolphin1' | 'dolphin2'>('dolphin1');
+
+// Images des dauphins
+const dolphinImages = ref<{ dolphin1: HTMLImageElement | null; dolphin2: HTMLImageElement | null }>({
+	dolphin1: null,
+	dolphin2: null,
+});
+const imagesLoaded = ref<{ dolphin1: boolean; dolphin2: boolean }>({
+	dolphin1: false,
+	dolphin2: false,
+});
 
 // Difficulty system
 const difficulties = [
@@ -290,14 +348,18 @@ const spawnPowerUp = () => {
 };
 
 const createParticles = (x: number, y: number) => {
-	for (let i = 0; i < 8; i++) {
+	// Limite maximale de particules pour éviter les ralentissements
+	if (particles.value.length > 50) return;
+
+	// Réduit de 8 à 5 particules par explosion
+	for (let i = 0; i < 5; i++) {
 		particles.value.push({
 			x: x * gridSize + gridSize / 2,
 			y: y * gridSize + gridSize / 2,
 			vx: (Math.random() - 0.5) * 4,
 			vy: (Math.random() - 0.5) * 4,
-			life: 30,
-			maxLife: 30,
+			life: 20, // Réduit de 30 à 20 frames
+			maxLife: 20,
 		});
 	}
 };
@@ -383,54 +445,76 @@ const drawGame = () => {
 	ctx.fillStyle = bgColor;
 	ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-	// Draw grid
+	// Draw grid (optimisé: seulement si neonMode)
 	if (neonMode.value) {
 		ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
 		ctx.shadowColor = 'rgba(0, 255, 255, 0.3)';
 		ctx.shadowBlur = 3;
-	}
-	else {
-		ctx.strokeStyle = '#16213e';
-		ctx.shadowBlur = 0;
-	}
-	ctx.lineWidth = 1;
-	for (let i = 0; i <= tileCount; i++) {
-		ctx.beginPath();
-		ctx.moveTo(i * gridSize, 0);
-		ctx.lineTo(i * gridSize, canvasHeight);
-		ctx.stroke();
-
-		ctx.beginPath();
-		ctx.moveTo(0, i * gridSize);
-		ctx.lineTo(canvasWidth, i * gridSize);
-		ctx.stroke();
+		ctx.lineWidth = 1;
+		// Grille simplifiée - moins de lignes
+		for (let i = 0; i <= tileCount; i += 2) {
+			ctx.beginPath();
+			ctx.moveTo(i * gridSize, 0);
+			ctx.lineTo(i * gridSize, canvasHeight);
+			ctx.moveTo(0, i * gridSize);
+			ctx.lineTo(canvasWidth, i * gridSize);
+			ctx.stroke();
+		}
 	}
 
 	// Draw snake
 	snake.value.forEach((segment, index) => {
 		if (index === 0) {
-			if (neonMode.value) {
-				ctx.fillStyle = '#00ffff';
-				ctx.shadowColor = '#00ffff';
-				ctx.shadowBlur = 20;
+			// Dessiner l'image du dauphin pour la tête
+			const img = dolphinImages.value[selectedSkin.value];
+			if (img && img.complete) {
+				ctx.save();
+				// Rotation selon la direction
+				const angle = Math.atan2(direction.value.y, direction.value.x);
+				ctx.translate(
+					segment.x * gridSize + gridSize / 2,
+					segment.y * gridSize + gridSize / 2,
+				);
+				ctx.rotate(angle);
+				ctx.drawImage(
+					img,
+					-gridSize / 2,
+					-gridSize / 2,
+					gridSize,
+					gridSize,
+				);
+				ctx.restore();
 			}
 			else {
-				ctx.fillStyle = '#00ff88';
-				ctx.shadowBlur = 10;
-				ctx.shadowColor = '#00ff88';
+				// Fallback si l'image n'est pas chargée
+				if (neonMode.value) {
+					ctx.fillStyle = '#00ffff';
+					ctx.shadowColor = '#00ffff';
+					ctx.shadowBlur = 20;
+				}
+				else {
+					ctx.fillStyle = '#00ff88';
+					ctx.shadowBlur = 10;
+					ctx.shadowColor = '#00ff88';
+				}
+				ctx.fillRect(
+					segment.x * gridSize + 1,
+					segment.y * gridSize + 1,
+					gridSize - 2,
+					gridSize - 2,
+				);
 			}
 		}
 		else {
 			ctx.fillStyle = neonMode.value ? '#0099ff' : '#0f3460';
 			ctx.shadowBlur = 0;
+			ctx.fillRect(
+				segment.x * gridSize + 1,
+				segment.y * gridSize + 1,
+				gridSize - 2,
+				gridSize - 2,
+			);
 		}
-
-		ctx.fillRect(
-			segment.x * gridSize + 1,
-			segment.y * gridSize + 1,
-			gridSize - 2,
-			gridSize - 2,
-		);
 	});
 
 	// Draw food
@@ -453,8 +537,17 @@ const drawGame = () => {
 };
 
 const gameLoop = () => {
-	updateGame();
+	const now = Date.now();
+	const elapsed = now - lastFrameTime;
+
+	// Limite le framerate selon la vitesse du jeu
+	if (elapsed >= gameSpeed) {
+		lastFrameTime = now - (elapsed % gameSpeed);
+		updateGame();
+	}
+
 	drawGame();
+	gameLoopId.value = requestAnimationFrame(gameLoop);
 };
 
 const handleKeyPress = (event: KeyboardEvent) => {
@@ -514,12 +607,13 @@ const startGame = () => {
 	godMode.value = false;
 	speedChallenge.value = false;
 	particles.value = [];
+	lastFrameTime = Date.now();
 
 	if (gameLoopId.value) {
-		clearInterval(gameLoopId.value);
+		cancelAnimationFrame(gameLoopId.value);
 	}
 
-	gameLoopId.value = window.setInterval(gameLoop, gameSpeed);
+	gameLoopId.value = requestAnimationFrame(gameLoop);
 };
 
 const activateNeonMode = () => {
@@ -562,6 +656,27 @@ const nextLevel = () => {
 };
 
 onMounted(() => {
+	// Charger les images des dauphins
+	const img1 = new Image();
+	img1.src = '/dolphin1.png';
+	img1.onload = () => {
+		dolphinImages.value.dolphin1 = img1;
+		imagesLoaded.value.dolphin1 = true;
+	};
+	img1.onerror = () => {
+		imagesLoaded.value.dolphin1 = false;
+	};
+
+	const img2 = new Image();
+	img2.src = '/dolphin2.png';
+	img2.onload = () => {
+		dolphinImages.value.dolphin2 = img2;
+		imagesLoaded.value.dolphin2 = true;
+	};
+	img2.onerror = () => {
+		imagesLoaded.value.dolphin2 = false;
+	};
+
 	window.addEventListener('keydown', handleKeyPress);
 	if (gameCanvas.value) {
 		drawGame();
@@ -571,7 +686,7 @@ onMounted(() => {
 onUnmounted(() => {
 	window.removeEventListener('keydown', handleKeyPress);
 	if (gameLoopId.value) {
-		clearInterval(gameLoopId.value);
+		cancelAnimationFrame(gameLoopId.value);
 	}
 });
 </script>
@@ -693,6 +808,73 @@ onUnmounted(() => {
 	margin-bottom: 2rem;
 	font-size: 1rem;
 	opacity: 0.8;
+}
+
+.skin-select {
+	margin: 2rem 0;
+	padding: 2rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 15px;
+	border: 2px solid rgba(0, 255, 136, 0.3);
+}
+
+.skin-select h3 {
+	color: white;
+	margin-bottom: 1rem;
+}
+
+.skin-buttons {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	flex-wrap: wrap;
+	margin-top: 1rem;
+}
+
+.skin-btn {
+	padding: 0.5rem;
+	border: 3px solid rgba(0, 255, 136, 0.5);
+	background: rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	border-radius: 10px;
+	transition: all 0.3s ease;
+	width: 120px;
+	height: 120px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.skin-btn:hover {
+	transform: scale(1.05);
+	border-color: #00ff88;
+	box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+.skin-btn.active {
+	background: rgba(0, 255, 136, 0.2);
+	border-color: #00ff88;
+	box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+}
+
+.skin-preview {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	border-radius: 5px;
+}
+
+.skin-placeholder {
+	font-size: 1.5rem;
+	color: white;
+	text-align: center;
+}
+
+.skin-note {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.85rem;
+	margin-top: 1rem;
+	text-align: center;
 }
 
 .difficulty-select {
