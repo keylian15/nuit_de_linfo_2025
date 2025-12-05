@@ -18,8 +18,8 @@ const items = computed<NavigationMenuItem[]>(() => [
 	},
 	{
 		label: 'Lasergame',
-		to: '/lasergame',
-		active: route.path.startsWith('/lasergame'),
+		to: '/game',
+		active: route.path.startsWith('/game'),
 	},
 ]);
 
