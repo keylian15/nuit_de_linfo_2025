@@ -4,7 +4,7 @@
 			<div class="field-row">
 				<div class="flex-field">
 					<UFormField
-						label="Nom *"
+						label="Nom"
 						:required="true"
 					>
 						<UInput
@@ -23,7 +23,7 @@
 
 				<div class="flex-field">
 					<UFormField
-						label="Année *"
+						label="Année"
 						:required="true"
 					>
 						<select
@@ -61,7 +61,7 @@
 			<div class="field-row">
 				<div class="flex-field">
 					<UFormField
-						label="Sexe *"
+						label="Sexe"
 						:required="true"
 					>
 						<div class="sexe-options">
@@ -95,7 +95,7 @@
 
 				<div class="flex-field">
 					<UFormField
-						label="Adresse Mail *"
+						label="Adresse Mail"
 						:required="true"
 					>
 						<UInput
@@ -110,6 +110,84 @@
 						class="custom-error-message"
 					>
 						{{ emailError }}
+					</p>
+				</div>
+			</div>
+
+			<div class="field-row">
+				<div class="flex-field">
+					<UFormField
+						label="Prénom"
+						:required="true"
+					>
+						<UInput
+							v-model="prenom"
+							placeholder="Entrez votre prénom"
+							@blur="validatePrenom"
+						/>
+					</UFormField>
+					<p
+						v-if="prenomError"
+						class="custom-error-message"
+					>
+						{{ prenomError }}
+					</p>
+				</div>
+				<div class="flex-field">
+					<UFormField
+						label="Âge"
+						:required="true"
+					>
+						<UInput
+							v-model="age"
+							placeholder="âge en mois"
+							@blur="validateAge"
+						/>
+					</UFormField>
+					<p
+						v-if="ageError"
+						class="custom-error-message"
+					>
+						{{ ageError }}
+					</p>
+				</div>
+			</div>
+
+			<div class="field-row">
+				<div class="flex-field">
+					<UFormField
+						label="Mot de passe"
+						:required="true"
+					>
+						<UInput
+							v-model="mdp"
+							placeholder="mot de passe"
+							@blur="validateMdp"
+						/>
+					</UFormField>
+					<p
+						v-if="mdpError"
+						class="custom-error-message"
+					>
+						{{ mdpError }}
+					</p>
+				</div>
+				<div class="flex-field">
+					<UFormField
+						label="Verification mot de passe"
+						:required="true"
+					>
+						<UInput
+							v-model="mdp_verif"
+							placeholder="essap ed tom"
+							@blur="validateMdp_verif"
+						/>
+					</UFormField>
+					<p
+						v-if="mdp_verifError"
+						class="custom-error-message"
+					>
+						{{ mdp_verifError }}
 					</p>
 				</div>
 			</div>
@@ -143,13 +221,26 @@ function generateRandomYears(count: number): string[] {
 	}
 	return Array.from(years).map(year => String(year)).sort((a, b) => b.localeCompare(a));
 }
+// Quand tu va valider ton formulaire :
+// Appeler la fonction inverser(mdp_inversé)
+// inverser mot de passe === valeur recup
+function inverser(inputString: string) {
+	const reversedString = inputString.split('').reverse().join('');
+	console.log(reversedString);
+
+	return reversedString;
+}
 
 const anneesDisponibles = ref<string[]>(generateRandomYears(COUNT));
 
 // --- DATA DU FORMULAIRE ---
 const nom = ref('');
+const prenom = ref('');
+const age = ref('');
 const annee = ref<string>('');
 const email = ref('');
+const mdp = ref('');
+const mdp_verif = ref('');
 
 // --- DATA Sexe (Checkboxes) ---
 const sexeFemme = ref(false);
@@ -158,9 +249,13 @@ const sexeNonBinaire = ref(false);
 
 // --- ÉTATS D'ERREUR ---
 const nomError = ref<string | undefined>(undefined);
+const ageError = ref<string | undefined>(undefined);
+const prenomError = ref<string | undefined>(undefined);
 const anneeError = ref<string | undefined>(undefined);
 const sexeError = ref<string | undefined>(undefined);
 const emailError = ref<string | undefined>(undefined);
+const mdpError = ref<string | undefined>(undefined);
+const mdp_verifError = ref<string | undefined>(undefined);
 
 const requiredMessage = 'Ce champ est obligatoire.';
 
@@ -190,6 +285,26 @@ function validateNom() {
 	nomError.value = nom.value.trim() === '' ? requiredMessage : undefined;
 }
 
+function validateAge() {
+	ageError.value = age.value.trim() === '' ? requiredMessage : undefined;
+}
+
+function validateMdp() {
+	mdpError.value = mdp.value.trim() === '' ? requiredMessage : undefined;
+}
+
+function validatePrenom() {
+	prenomError.value = prenom.value.trim() === '' ? requiredMessage : undefined;
+}
+
+function validateMdp_verif() {
+	mdp_verifError.value = mdp_verif.value.trim() === '' ? requiredMessage : undefined;
+	const valeur = inverser(mdp_verif.value);
+	if (valeur != mdp.value) {
+		mdp_verifError.value = 'Le mot de passe n\'est pas le même';
+	}
+}
+
 function validateAnnee() {
 	anneeError.value = annee.value === '' ? requiredMessage : undefined;
 }
@@ -217,6 +332,10 @@ function validateAll(): boolean {
 	validateAnnee();
 	validateSexe();
 	validateEmail();
+	validateMdp();
+	validatePrenom();
+	validateAge();
+	validateMdp_verif();
 
 	return !nomError.value && !anneeError.value && !sexeError.value && !emailError.value;
 }
@@ -241,78 +360,79 @@ function handleSubmit() {
 /* 🚨 STYLE CRITIQUE POUR LES CASES CARRÉES */
 .custom-square-checkbox :deep(.ring-gray-300),
 .custom-square-checkbox :deep(.ring-primary-500),
-.custom-square-checkbox :deep(.bg-white) { /* Ajout du ciblage du fond blanc si existant */
-    /* Force le carré et supprime le rayon */
-    width: 1rem !important;
-    height: 1rem !important;
-    border-radius: 0 !important;
-    border: 1px solid #d1d5db !important;
-    /* Assurez-vous que le fond est blanc lorsqu'il n'est PAS coché */
-    background-color: white !important;
+.custom-square-checkbox :deep(.bg-white) {
+	/* Ajout du ciblage du fond blanc si existant */
+	/* Force le carré et supprime le rayon */
+	width: 1rem !important;
+	height: 1rem !important;
+	border-radius: 0 !important;
+	border: 1px solid #d1d5db !important;
+	/* Assurez-vous que le fond est blanc lorsqu'il n'est PAS coché */
+	background-color: white !important;
 }
 
 /* 🚨 Cache l'icône de coche par défaut lorsque la case est cochée (si elle est l'élément qui chevauche) */
 .custom-square-checkbox :deep(.w-3.h-3) {
-    /* Cache l'icône pour que seul le fond coloré du carré soit visible si coché */
-    display: none !important;
+	/* Cache l'icône pour que seul le fond coloré du carré soit visible si coché */
+	display: none !important;
 }
 
 /* --- Styles Généraux (Inchangés) --- */
 .form-container {
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 24px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	max-width: 600px;
+	margin: 40px auto;
+	padding: 24px;
+	background-color: #ffffff;
+	border-radius: 10px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .custom-error-message {
-    color: #16a34a !important;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
+	color: #16a34a !important;
+	font-size: 0.875rem;
+	margin-top: 0.25rem;
 }
 
 .native-select {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    background-color: white;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    cursor: pointer;
-    color: #1f2937;
-    height: 2.5rem;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #d1d5db;
+	border-radius: 0.375rem;
+	background-color: white;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	cursor: pointer;
+	color: #1f2937;
+	height: 2.5rem;
 }
 
 .field-row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    margin-bottom: 16px;
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	margin-bottom: 16px;
 }
 
 .flex-field {
-    flex: 1;
-    min-width: 150px;
+	flex: 1;
+	min-width: 150px;
 }
 
 .sexe-options {
-    display: flex;
-    gap: 16px;
-    margin-top: 0.5rem;
+	display: flex;
+	gap: 16px;
+	margin-top: 0.5rem;
 }
 
 .submit-button-wrapper {
-    flex-basis: 100%;
-    margin-top: 20px;
+	flex-basis: 100%;
+	margin-top: 20px;
 }
 
 @media (max-width: 480px) {
-    .field-row {
-        flex-direction: column;
-        gap: 0;
-    }
+	.field-row {
+		flex-direction: column;
+		gap: 0;
+	}
 }
 </style>
