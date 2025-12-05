@@ -35,6 +35,8 @@ class MissileGame extends Phaser.Scene {
 	preload() {
 		// Charger l'image de l'ennemi
 		this.load.image('enemy', '/enemy.png');
+		// Charger l'image de la pomme
+		this.load.image('apple', '/pomme.png');
 
 		// Texture particule
 		const particleGraph = this.make.graphics({ x: 0, y: 0, add: false });
@@ -217,8 +219,12 @@ class MissileGame extends Phaser.Scene {
 		)
 			return;
 
+		// 10% de chances de spawner une pomme
+		const isApple = Math.random() < 0.1;
+		const textureKey = isApple ? 'apple' : 'enemy';
+
 		// Créer un sprite avec l'image
-		const enemy = this.add.sprite(x, y, 'enemy');
+		const enemy = this.add.sprite(x, y, textureKey);
 		enemy.setOrigin(0.5, 0.5);
 		enemy.setDisplaySize(80, 80);
 
@@ -235,6 +241,8 @@ class MissileGame extends Phaser.Scene {
 
 		this.enemies.add(enemy);
 
+		// Marquer si c'est une pomme
+		enemy.setData('isApple', isApple);
 		enemy.setData(
 			'nextDirectionChange',
 			this.time.now + Phaser.Math.Between(1000, 3000),
@@ -349,6 +357,7 @@ class MissileGame extends Phaser.Scene {
 			if (!enemy.active) return;
 
 			const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
+			const isApple = enemy.getData('isApple') as boolean;
 
 			// FORCER les ennemis à rester dans les limites
 			if (enemy.x < 45) {
@@ -381,10 +390,12 @@ class MissileGame extends Phaser.Scene {
 				);
 			}
 
-			// Tir des ennemis
-			const nextShot = enemy.getData('nextShot') as number;
-			if (this.time.now > nextShot) {
-				this.enemyShoot(enemy);
+			// Tir des ennemis (sauf si c'est une pomme)
+			if (!isApple) {
+				const nextShot = enemy.getData('nextShot') as number;
+				if (this.time.now > nextShot) {
+					this.enemyShoot(enemy);
+				}
 			}
 		});
 
@@ -395,6 +406,14 @@ class MissileGame extends Phaser.Scene {
 		missile: Phaser.GameObjects.Graphics,
 		enemy: Phaser.GameObjects.Sprite,
 	) {
+		const isApple = enemy.getData('isApple') as boolean;
+
+		if (isApple) {
+			// Si c'est une pomme, rediriger vers le snake game
+			window.location.href = '/snake';
+			return;
+		}
+
 		this.score += 10;
 
 		this.explosionEmitter.setPosition(enemy.x, enemy.y);
