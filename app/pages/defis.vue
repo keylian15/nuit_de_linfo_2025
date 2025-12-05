@@ -80,6 +80,27 @@
 				</li>
 			</ol>
 
+			<!-- Section Équipe -->
+			<div class="team-section animate-fadeIn animation-delay-1000">
+				<h3 class="defi-text">
+					🎯 L'équipe derrière les défis
+				</h3>
+				<p class="defi-text">
+					Les défis ont été réalisés par <strong>Turbé Keylian</strong>, <strong>Gabriel David</strong>,
+					<strong>Guilmain Leny</strong>, <strong>Le Pallec Hippolyte</strong>, <strong>Siame Romain</strong>,
+					<strong>Senicourt Florian</strong>, <strong>Delambre Aëryn</strong>, <strong>Mouronval
+						Camille</strong>
+					et <strong>Martel Léa</strong>.
+				</p>
+				<!-- Easter egg caché -->
+				<div
+					class="defi-text"
+					title="Tu m'as trouvé ! 🎉"
+				>
+					<span class="defi-text">Fourny Valentin</span>
+				</div>
+			</div>
+
 			<div class="footer-links animate-fadeIn animation-delay-1000">
 				<a
 					href="https://www.nuitdelinfo.com/inscription/defis/liste"
