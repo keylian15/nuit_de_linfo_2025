@@ -1,5 +1,5 @@
 <template>
 	<ClientOnly>
-		<SnakeGame />
+		<SnakeComponent />
 	</ClientOnly>
 </template>
