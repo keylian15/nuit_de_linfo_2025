@@ -14,6 +14,12 @@
 				>
 					🐍 Snake
 				</NuxtLink>
+				<NuxtLink
+					to="/defis"
+					class="nav-link"
+				>
+					🔥 Défis
+				</NuxtLink>
 			</nav>
 		</header>
 
