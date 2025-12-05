@@ -1,8 +1,9 @@
 <template>
-	<header-bar />
-	<div>
-		<NuxtPage />
-	</div>
+	<UApp>
+		<NuxtLayout>
+			<NuxtPage />
+		</NuxtLayout>
+	</UApp>
 </template>
 
 <style>

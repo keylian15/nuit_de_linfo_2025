@@ -9,6 +9,9 @@
 
 <script setup lang="ts">
 // Phaser ne fonctionne que côté client, donc on utilise ClientOnly
+definePageMeta({
+	layout: 'game',
+});
 </script>
 
 <style scoped>
