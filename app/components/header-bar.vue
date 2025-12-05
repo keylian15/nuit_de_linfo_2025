@@ -27,11 +27,6 @@ const items = computed<NavigationMenuItem[]>(() => [
 		active: route.path.startsWith('/game'),
 	},
 	{
-		label: 'Mentions légales',
-		to: '/mentions',
-		active: route.path === '/mentions',
-	},
-	{
 		label: 'Formulaires',
 		to: '/formulaire',
 		active: route.path === '/formulaire',
@@ -87,7 +82,11 @@ const handleLogin = () => {
 						v-else
 						class="flex items-center gap-2"
 					>
-						<UTooltip :text="`Connecté en tant que ${auth.user?.username || auth.user?.email}`">
+						<UTooltip
+							:text="`Connecté en tant que ${
+								auth.user?.username || auth.user?.email
+							}`"
+						>
 							<UAvatar
 								:alt="auth.user?.username"
 								size="sm"
