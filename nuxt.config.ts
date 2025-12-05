@@ -6,9 +6,9 @@ export default defineNuxtConfig({
 		// Activate @prisma/nuxt only in development
 		...(process.env.NODE_ENV === 'production' ? [] : ['@prisma/nuxt']),
 	],
+	pages: true,
 	devtools: { enabled: process.env.NODE_ENV !== 'production' },
 	compatibilityDate: '2025-07-15',
-
 	eslint: {
 		config: {
 			stylistic: {
