@@ -91,6 +91,30 @@
 					</p>
 				</div>
 
+				<div class="background-select">
+					<h3>Choisir le fond marin:</h3>
+					<div class="background-buttons">
+						<button
+							:class="['bg-btn', { active: selectedBackground === 'ocean' }]"
+							@click="selectedBackground = 'ocean'"
+						>
+							🌊 Océan
+						</button>
+						<button
+							:class="['bg-btn', { active: selectedBackground === 'deep' }]"
+							@click="selectedBackground = 'deep'"
+						>
+							🌑 Profondeur
+						</button>
+						<button
+							:class="['bg-btn', { active: selectedBackground === 'coral' }]"
+							@click="selectedBackground = 'coral'"
+						>
+							🪸 Corail
+						</button>
+					</div>
+				</div>
+
 				<div class="difficulty-select">
 					<h3>Choisir la difficulté:</h3>
 					<div class="difficulty-buttons">
@@ -105,9 +129,6 @@
 					</div>
 				</div>
 
-				<p class="score-to-beat">
-					Objectif: {{ targetScore }} points
-				</p>
 				<button
 					class="start-button"
 					@click="startGame"
@@ -122,12 +143,6 @@
 			>
 				<h2>💀 Game Over! 💀</h2>
 				<p>Score final: <span class="final-score">{{ score }}</span></p>
-				<p
-					v-if="score >= targetScore"
-					class="victory-text"
-				>
-					🎉 VICTOIRE! 🎉
-				</p>
 				<button
 					class="restart-button"
 					@click="restartGame"
@@ -172,10 +187,6 @@
 						<div class="stat">
 							<span class="label">Niveau</span>
 							<span class="value">{{ level }}</span>
-						</div>
-						<div class="stat">
-							<span class="label">Objectif</span>
-							<span class="value">{{ targetScore }}</span>
 						</div>
 						<div
 							v-if="godMode"
@@ -234,7 +245,6 @@ const snake = ref<{ x: number; y: number }[]>([{ x: 10, y: 10 }]);
 const direction = ref({ x: 0, y: 0 });
 const nextDirection = ref({ x: 0, y: 0 });
 const score = ref(0);
-const targetScore = ref(10);
 const level = ref(1);
 const gameStarted = ref(false);
 const gameOver = ref(false);
@@ -249,6 +259,7 @@ const neonMode = ref(false);
 const godMode = ref(false);
 const speedChallenge = ref(false);
 const selectedSkin = ref<'dolphin1' | 'dolphin2'>('dolphin1');
+const selectedBackground = ref<'ocean' | 'deep' | 'coral'>('ocean');
 
 // Images des dauphins
 const dolphinImages = ref<{ dolphin1: HTMLImageElement | null; dolphin2: HTMLImageElement | null }>({
@@ -301,7 +312,6 @@ const foods = ref([{ x: 15, y: 15 }]);
 const selectDifficulty = (diff: typeof difficulties[0]) => {
 	selectedDifficulty.value = diff.name;
 	gameSpeed = diff.speed;
-	targetScore.value = 15 + (difficulties.indexOf(diff) * 5);
 };
 
 const generateFood = () => {
@@ -399,6 +409,7 @@ const updateGame = () => {
 	// Check food collision
 	const foodIndex = foods.value.findIndex(f => f.x === head.x && f.y === head.y);
 	if (foodIndex !== -1) {
+		// Ne pas retirer la queue - le snake grandit
 		score.value++;
 		createParticles(head.x, head.y);
 		foods.value.splice(foodIndex, 1);
@@ -407,13 +418,9 @@ const updateGame = () => {
 		if (score.value % 5 === 0) {
 			spawnPowerUp();
 		}
-
-		if (score.value >= targetScore.value) {
-			gameWon.value = true;
-			return;
-		}
 	}
 	else {
+		// Retirer la queue seulement si on n'a pas mangé
 		snake.value.pop();
 	}
 
@@ -441,26 +448,50 @@ const drawGame = () => {
 	const ctx = canvas.getContext('2d');
 	if (!ctx) return;
 
-	const bgColor = neonMode.value ? '#0a0a0f' : '#1a1a2e';
+	// Fond selon le thème sélectionné
+	let bgColor, gridColor;
+	switch (selectedBackground.value) {
+		case 'ocean':
+			bgColor = neonMode.value ? '#0a0a0f' : '#1a3a52';
+			gridColor = neonMode.value ? 'rgba(0, 255, 255, 0.1)' : 'rgba(100, 200, 255, 0.15)';
+			break;
+		case 'deep':
+			bgColor = neonMode.value ? '#000005' : '#0a0a1a';
+			gridColor = neonMode.value ? 'rgba(0, 255, 255, 0.1)' : 'rgba(50, 50, 100, 0.2)';
+			break;
+		case 'coral':
+			bgColor = neonMode.value ? '#0f0a0a' : '#2a1a3a';
+			gridColor = neonMode.value ? 'rgba(255, 0, 255, 0.1)' : 'rgba(255, 100, 150, 0.15)';
+			break;
+		default:
+			bgColor = neonMode.value ? '#0a0a0f' : '#1a1a2e';
+			gridColor = neonMode.value ? 'rgba(0, 255, 255, 0.1)' : '#16213e';
+	}
+
 	ctx.fillStyle = bgColor;
 	ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-	// Draw grid (optimisé: seulement si neonMode)
+	// Draw grid - une ligne par case jouable
+	ctx.strokeStyle = gridColor;
 	if (neonMode.value) {
-		ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-		ctx.shadowColor = 'rgba(0, 255, 255, 0.3)';
+		ctx.shadowColor = gridColor;
 		ctx.shadowBlur = 3;
-		ctx.lineWidth = 1;
-		// Grille simplifiée - moins de lignes
-		for (let i = 0; i <= tileCount; i += 2) {
-			ctx.beginPath();
-			ctx.moveTo(i * gridSize, 0);
-			ctx.lineTo(i * gridSize, canvasHeight);
-			ctx.moveTo(0, i * gridSize);
-			ctx.lineTo(canvasWidth, i * gridSize);
-			ctx.stroke();
-		}
 	}
+	ctx.lineWidth = 1;
+	// Grille complète - toutes les cases
+	for (let i = 0; i <= tileCount; i++) {
+		ctx.beginPath();
+		ctx.moveTo(i * gridSize, 0);
+		ctx.lineTo(i * gridSize, canvasHeight);
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(0, i * gridSize);
+		ctx.lineTo(canvasWidth, i * gridSize);
+		ctx.stroke();
+	}
+
+	ctx.shadowBlur = 0;
 
 	// Draw snake
 	snake.value.forEach((segment, index) => {
@@ -506,7 +537,22 @@ const drawGame = () => {
 			}
 		}
 		else {
-			ctx.fillStyle = neonMode.value ? '#0099ff' : '#0f3460';
+			// Couleur de la queue adaptée au fond
+			let bodyColor;
+			switch (selectedBackground.value) {
+				case 'ocean':
+					bodyColor = neonMode.value ? '#00ccff' : '#3399cc';
+					break;
+				case 'deep':
+					bodyColor = neonMode.value ? '#6666ff' : '#4444aa';
+					break;
+				case 'coral':
+					bodyColor = neonMode.value ? '#ff66ff' : '#cc66aa';
+					break;
+				default:
+					bodyColor = neonMode.value ? '#0099ff' : '#0f3460';
+			}
+			ctx.fillStyle = bodyColor;
 			ctx.shadowBlur = 0;
 			ctx.fillRect(
 				segment.x * gridSize + 1,
@@ -617,24 +663,32 @@ const startGame = () => {
 };
 
 const activateNeonMode = () => {
-	neonMode.value = true;
+	neonMode.value = false; // Reset d'abord
+	godMode.value = false;
+	speedChallenge.value = false;
 	showSecretMenu.value = false;
 	startGame();
+	neonMode.value = true; // Activer après startGame
 };
 
 const activateGodMode = () => {
-	godMode.value = true;
+	neonMode.value = false;
+	godMode.value = false;
+	speedChallenge.value = false;
 	showSecretMenu.value = false;
 	startGame();
+	godMode.value = true; // Activer après startGame
 };
 
 const activateSpeedChallenge = () => {
-	speedChallenge.value = true;
+	neonMode.value = false;
+	godMode.value = false;
+	speedChallenge.value = false;
+	showSecretMenu.value = false;
 	gameSpeed = 20;
 	selectedDifficulty.value = 'Infernal';
-	targetScore.value = 50;
-	showSecretMenu.value = false;
 	startGame();
+	speedChallenge.value = true; // Activer après startGame
 };
 
 const closeSecret = () => {
@@ -649,7 +703,6 @@ const restartGame = () => {
 
 const nextLevel = () => {
 	level.value++;
-	targetScore.value += 10;
 	gameSpeed = Math.max(30, gameSpeed - 10);
 	gameWon.value = false;
 	startGame();
@@ -875,6 +928,51 @@ onUnmounted(() => {
 	font-size: 0.85rem;
 	margin-top: 1rem;
 	text-align: center;
+}
+
+.background-select {
+	margin: 2rem 0;
+	padding: 2rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 15px;
+	border: 2px solid rgba(0, 255, 136, 0.3);
+}
+
+.background-select h3 {
+	color: white;
+	margin-bottom: 1rem;
+}
+
+.background-buttons {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	flex-wrap: wrap;
+	margin-top: 1rem;
+}
+
+.bg-btn {
+	padding: 0.8rem 1.5rem;
+	border: 2px solid rgba(0, 255, 136, 0.5);
+	background: rgba(0, 0, 0, 0.2);
+	color: white;
+	cursor: pointer;
+	border-radius: 10px;
+	transition: all 0.3s ease;
+	font-size: 1rem;
+}
+
+.bg-btn:hover {
+	transform: scale(1.05);
+	border-color: #00ff88;
+	box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+.bg-btn.active {
+	background: rgba(0, 255, 136, 0.2);
+	border-color: #00ff88;
+	box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+	transform: scale(1.1);
 }
 
 .difficulty-select {
