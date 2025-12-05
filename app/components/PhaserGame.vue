@@ -3,101 +3,154 @@
 		ref="gameContainer"
 		class="phaser-game-container"
 	/>
+	<div class="instructions">
+		Cliquez pour capturer la souris (Échap pour quitter)
+	</div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import Phaser from 'phaser';
 
+// Variables Vue
 const gameContainer = ref<HTMLDivElement | null>(null);
 let game: Phaser.Game | null = null;
 
 class MissileGame extends Phaser.Scene {
-	private player!: Phaser.GameObjects.Rectangle;
-	private missiles!: Phaser.Physics.Arcade.Group;
-	private enemies!: Phaser.Physics.Arcade.Group;
-	private enemyMissiles!: Phaser.Physics.Arcade.Group;
-	private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-	private score: number = 0;
-	private scoreText!: Phaser.GameObjects.Text;
+	// Déclarations simplifiées sans 'private' pour éviter les conflits de parsing
+	player!: Phaser.GameObjects.Rectangle;
+	missiles!: Phaser.Physics.Arcade.Group;
+	enemies!: Phaser.Physics.Arcade.Group;
+	enemyMissiles!: Phaser.Physics.Arcade.Group;
+	cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+	score = 0;
+	scoreText!: Phaser.GameObjects.Text;
+	explosionEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+	aimCursor!: Phaser.GameObjects.Container;
 
 	constructor() {
 		super({ key: 'MissileGame' });
 	}
 
+	preload() {
+		// Texture particule
+		const particleGraph = this.make.graphics({ x: 0, y: 0, add: false });
+		particleGraph.fillStyle(0xffffff, 1);
+		particleGraph.fillCircle(4, 4, 4);
+		particleGraph.generateTexture('particle', 8, 8);
+
+		// Texture Viseur
+		const cursorGraph = this.make.graphics({ x: 0, y: 0, add: false });
+		cursorGraph.lineStyle(2, 0x00ff00, 1);
+		cursorGraph.strokeCircle(16, 16, 10);
+		cursorGraph.lineBetween(16, 2, 16, 10);
+		cursorGraph.lineBetween(16, 22, 16, 30);
+		cursorGraph.lineBetween(2, 16, 10, 16);
+		cursorGraph.lineBetween(22, 16, 30, 16);
+		cursorGraph.generateTexture('aimCursor', 32, 32);
+	}
+
 	create() {
-		// Fond simple
 		this.add.rectangle(400, 300, 800, 600, 0x1a1a2e);
 
-		// Joueur (curseur en bas de l'écran)
+		// Pointer Lock sécurisé
+		this.input.on('pointerdown', () => {
+			if (this.input.mouse && !this.input.mouse.locked) {
+				this.input.mouse.requestPointerLock();
+			}
+			else {
+				this.shootMissile();
+			}
+		});
+
+		// Joueur
 		this.player = this.add.rectangle(400, 550, 60, 20, 0x00ff41);
 		this.physics.add.existing(this.player);
 		const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
 		playerBody.setCollideWorldBounds(true);
+		playerBody.setImmovable(true);
 
-		// Groupe de missiles du joueur
+		// Groupes
 		this.missiles = this.physics.add.group({
 			defaultKey: 'missile',
 			maxSize: 50,
 		});
-
-		// Groupe d'ennemis
 		this.enemies = this.physics.add.group({
 			defaultKey: 'enemy',
 			maxSize: 20,
 		});
-
-		// Groupe de missiles ennemis
 		this.enemyMissiles = this.physics.add.group({
 			defaultKey: 'enemyMissile',
 			maxSize: 50,
 		});
 
-		// Curseur clavier (optionnel, pour test)
-		this.cursors = this.input.keyboard!.createCursorKeys();
+		// Particules
+		this.explosionEmitter = this.add.particles(0, 0, 'particle', {
+			lifespan: 600,
+			speed: { min: 50, max: 200 },
+			scale: { start: 1, end: 0 },
+			blendMode: 'ADD',
+			emitting: false,
+		});
 
-		// Suivre la souris sur l'axe X
+		// Viseur
+		const aimImg = this.add.image(0, 0, 'aimCursor');
+		this.aimCursor = this.add.container(400, 300, [aimImg]);
+		this.aimCursor.setDepth(100);
+
+		// Mouvement souris
 		this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-			this.player.x = Phaser.Math.Clamp(pointer.x, 30, 770);
+			if (this.input.mouse && this.input.mouse.locked) {
+				this.aimCursor.x += pointer.movementX;
+				this.aimCursor.y += pointer.movementY;
+
+				// Clamp manuel
+				if (this.aimCursor.x < 0) this.aimCursor.x = 0;
+				if (this.aimCursor.x > 800) this.aimCursor.x = 800;
+				if (this.aimCursor.y < 0) this.aimCursor.y = 0;
+				if (this.aimCursor.y > 600) this.aimCursor.y = 600;
+
+				// Joueur suit X
+				let targetX = this.aimCursor.x;
+				if (targetX < 30) targetX = 30;
+				if (targetX > 770) targetX = 770;
+				this.player.x = targetX;
+			}
 		});
 
-		// Tirer avec clic ou espace
-		this.input.on('pointerdown', () => {
-			this.shootMissile();
-		});
-
-		this.input.keyboard!.on('keydown-SPACE', () => {
-			this.shootMissile();
-		});
+		// Clavier
+		if (this.input.keyboard) {
+			this.cursors = this.input.keyboard.createCursorKeys();
+			this.input.keyboard.on('keydown-SPACE', () => {
+				if (this.input.mouse && this.input.mouse.locked) {
+					this.shootMissile();
+				}
+			});
+		}
 
 		// Score
 		this.scoreText = this.add.text(16, 16, 'Score: 0', {
 			fontSize: '20px',
 			color: '#00ff41',
+			fontFamily: 'Arial',
 		});
 
-		// Bordures du monde pour les rebonds
 		this.physics.world.setBoundsCollision(true, true, true, true);
 
-		// Collisions
-		this.physics.add.overlap(
-			this.missiles,
-			this.enemies,
-			this.hitEnemy as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
-			undefined,
-			this,
-		);
+		// Collisions : Fonction fléchée pour éviter les problèmes de binding
+		this.physics.add.overlap(this.missiles, this.enemies, (obj1, obj2) => {
+			this.hitEnemy(obj1, obj2);
+		});
 		this.physics.add.overlap(
 			this.player,
 			this.enemyMissiles,
-			this.hitPlayer as Phaser.Types.Physics.Arcade.ArcadePhysicsCallback,
-			undefined,
-			this,
+			(obj1, obj2) => {
+				this.hitPlayer(obj1, obj2);
+			},
 		);
 
-		// Spawn d'ennemis toutes les 2 secondes
 		this.time.addEvent({
-			delay: 2000,
+			delay: 1500,
 			callback: this.spawnEnemy,
 			callbackScope: this,
 			loop: true,
@@ -105,31 +158,37 @@ class MissileGame extends Phaser.Scene {
 	}
 
 	shootMissile() {
-		const missile = this.add.rectangle(this.player.x, this.player.y - 20, 8, 20, 0xff6b6b);
+		const missile = this.add.rectangle(
+			this.aimCursor.x,
+			this.aimCursor.y,
+			4,
+			25,
+			0x00ffff,
+		);
 		this.physics.add.existing(missile);
 
 		const missileBody = missile.body as Phaser.Physics.Arcade.Body;
 		missileBody.setBounce(1, 1);
 		missileBody.setCollideWorldBounds(true);
-		missileBody.setVelocity(0, -400);
+		missileBody.setVelocity(0, -600);
+		missileBody.setVelocityX(Phaser.Math.Between(-50, 50));
 
 		this.missiles.add(missile);
 
-		// Détruire après 5 secondes
-		this.time.delayedCall(5000, () => {
+		this.time.delayedCall(4000, () => {
 			if (missile.active) missile.destroy();
 		});
 	}
 
 	spawnEnemy() {
-		let x = Phaser.Math.Between(50, 750);
+		const x = Phaser.Math.Between(50, 750);
 		const y = Phaser.Math.Between(50, 200);
 
-		// Éviter de spawn trop proche du joueur
-		const distToPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y);
-		if (distToPlayer < 200) {
-			x = this.player.x > 400 ? Phaser.Math.Between(50, 300) : Phaser.Math.Between(500, 750);
-		}
+		if (
+			Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y)
+			< 200
+		)
+			return;
 
 		const enemy = this.add.rectangle(x, y, 40, 40, 0xff00ff);
 		this.physics.add.existing(enemy);
@@ -137,21 +196,32 @@ class MissileGame extends Phaser.Scene {
 		const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
 		enemyBody.setCollideWorldBounds(true);
 		enemyBody.setBounce(1, 1);
-
-		// Vitesse horizontale aléatoire, vitesse verticale positive (vers le bas) ou nulle
-		const velocityX = Phaser.Math.Between(-150, 150);
-		const velocityY = Phaser.Math.Between(-50, 50); // Rester en haut
-		enemyBody.setVelocity(velocityX, velocityY);
+		enemyBody.setVelocity(
+			Phaser.Math.Between(-150, 150),
+			Phaser.Math.Between(-50, 50),
+		);
 
 		this.enemies.add(enemy);
 
-		enemy.setData('nextDirectionChange', this.time.now + Phaser.Math.Between(1000, 3000));
-		enemy.setData('nextShot', this.time.now + Phaser.Math.Between(1000, 2500));
+		enemy.setData(
+			'nextDirectionChange',
+			this.time.now + Phaser.Math.Between(1000, 3000),
+		);
+		enemy.setData(
+			'nextShot',
+			this.time.now + Phaser.Math.Between(1000, 2500),
+		);
 	}
 
 	enemyShoot(enemy: Phaser.GameObjects.Rectangle) {
-		const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+		if (!enemy.active) return;
 
+		const angle = Phaser.Math.Angle.Between(
+			enemy.x,
+			enemy.y,
+			this.player.x,
+			this.player.y,
+		);
 		const missile = this.add.rectangle(enemy.x, enemy.y, 6, 15, 0xffff00);
 		this.physics.add.existing(missile);
 
@@ -160,62 +230,62 @@ class MissileGame extends Phaser.Scene {
 
 		this.enemyMissiles.add(missile);
 
-		// Détruire après 4 secondes
 		this.time.delayedCall(4000, () => {
 			if (missile.active) missile.destroy();
 		});
 
-		enemy.setData('nextShot', this.time.now + Phaser.Math.Between(1500, 3000));
+		enemy.setData(
+			'nextShot',
+			this.time.now + Phaser.Math.Between(1500, 3000),
+		);
 	}
 
-	hitEnemy(missile: Phaser.GameObjects.GameObject, enemy: Phaser.GameObjects.GameObject) {
-		const missileRect = missile as Phaser.GameObjects.Rectangle;
-		const enemyRect = enemy as Phaser.GameObjects.Rectangle;
+	hitEnemy(obj1: any, obj2: any) {
+		const missile = obj1 as Phaser.GameObjects.Rectangle;
+		const enemy = obj2 as Phaser.GameObjects.Rectangle;
 
 		this.score += 10;
 		this.scoreText.setText('Score: ' + this.score);
 
-		missileRect.destroy();
-		enemyRect.destroy();
+		this.explosionEmitter.setPosition(enemy.x, enemy.y);
+		this.explosionEmitter.explode(20);
+
+		missile.destroy();
+		enemy.destroy();
 	}
 
-	hitPlayer(_player: Phaser.GameObjects.GameObject, missile: Phaser.GameObjects.GameObject) {
+	hitPlayer(player: any, missile: any) {
 		const missileRect = missile as Phaser.GameObjects.Rectangle;
-		this.cameras.main.shake(200, 0.01);
+		this.cameras.main.shake(200, 0.02);
+		this.cameras.main.flash(200, 255, 0, 0);
 		missileRect.destroy();
 	}
 
-	update() {
-		// Déplacement au clavier
-		if (this.cursors.left.isDown) {
-			this.player.x -= 5;
-			this.player.x = Phaser.Math.Clamp(this.player.x, 30, 770);
-		}
-		else if (this.cursors.right.isDown) {
-			this.player.x += 5;
-			this.player.x = Phaser.Math.Clamp(this.player.x, 30, 770);
-		}
-
-		// Mise à jour des ennemis
+	override update() {
 		this.enemies.children.entries.forEach((enemyObj) => {
 			const enemy = enemyObj as Phaser.GameObjects.Rectangle;
+			if (!enemy.active) return;
+
 			const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
 
-			// Empêcher les ennemis de descendre trop bas (zone du joueur)
 			if (enemy.y > 350) {
 				enemyBody.setVelocityY(-Math.abs(enemyBody.velocity.y));
 			}
 
-			// Changer de direction aléatoirement
-			if (this.time.now > enemy.getData('nextDirectionChange')) {
-				const newVelocityX = Phaser.Math.Between(-150, 150);
-				const newVelocityY = Phaser.Math.Between(-80, 80);
-				enemyBody.setVelocity(newVelocityX, newVelocityY);
-				enemy.setData('nextDirectionChange', this.time.now + Phaser.Math.Between(1000, 3000));
+			const nextChange = enemy.getData('nextDirectionChange') as number;
+			if (this.time.now > nextChange) {
+				enemyBody.setVelocity(
+					Phaser.Math.Between(-150, 150),
+					Phaser.Math.Between(-80, 80),
+				);
+				enemy.setData(
+					'nextDirectionChange',
+					this.time.now + Phaser.Math.Between(1000, 3000),
+				);
 			}
 
-			// Tirer périodiquement
-			if (this.time.now > enemy.getData('nextShot')) {
+			const nextShot = enemy.getData('nextShot') as number;
+			if (this.time.now > nextShot) {
 				this.enemyShoot(enemy);
 			}
 		});
@@ -239,7 +309,6 @@ onMounted(() => {
 				},
 			},
 		};
-
 		game = new Phaser.Game(config);
 	}
 });
@@ -254,11 +323,23 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .phaser-game-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  background: #0a0a0a;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+	background: #0a0a0a;
+}
+.instructions {
+	position: absolute;
+	top: 10px;
+	left: 50%;
+	transform: translateX(-50%);
+	color: white;
+	font-family: Arial, sans-serif;
+	background: rgba(0, 0, 0, 0.5);
+	padding: 5px 10px;
+	border-radius: 4px;
+	pointer-events: none;
 }
 </style>
