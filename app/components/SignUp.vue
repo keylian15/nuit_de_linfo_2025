@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <script setup>
 const email = ref('');
 const password = ref('');
@@ -8,7 +9,7 @@ const successMessageSignup = ref('');
 const authStore = useAuthStore();
 
 const isValidGmail = (email) => {
-	return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
+	return true;
 };
 
 const handleRegister = async () => {

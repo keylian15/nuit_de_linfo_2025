@@ -1,4 +1,16 @@
 <template>
+	<UTooltipProvider>
+		<UApp>
+			<div>
+				<USelect
+					v-model="componentValue"
+					:items="componentItems"
+					class="w-48"
+				/>
+				Sélectionné : {{ componentValue }}
+			</div>
+		</UApp>
+	</UTooltipProvider>
 	<UCheckboxGroup
 		v-model="value"
 		variant="card"
@@ -28,7 +40,12 @@ watch(value, () => {
 		desc.value += '\nLa mémoire vive est cassée';
 	}
 }, { deep: true });
-</script>
 
-<style>
-</style>
+const componentItems = ref([
+	{ label: 'Composant1', value: 'compo1' },
+	{ label: 'Composant2', value: 'compo2' },
+	{ label: 'Composant3', value: 'compo3' },
+	{ label: 'Composant4', value: 'compo4' },
+]);
+const componentValue = ref('compo1');
+</script>

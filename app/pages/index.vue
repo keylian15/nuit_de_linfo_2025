@@ -1,6 +1,7 @@
 <template>
 	<div>
-		<main>
+		<!-- Checkbox component -->
+		<main class="max-w-7xl mx-auto px-4 py-12">
 			<choice-checkbox />
 		</main>
 	</div>
