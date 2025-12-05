@@ -3,11 +3,13 @@ export default defineNuxtConfig({
 		'@nuxtjs/i18n',
 		'@nuxt/eslint',
 		'@pinia/nuxt',
+		'@nuxt/ui',
 		// Activate @prisma/nuxt only in development
 		...(process.env.NODE_ENV === 'production' ? [] : ['@prisma/nuxt']),
 	],
 	pages: true,
 	devtools: { enabled: process.env.NODE_ENV !== 'production' },
+	css: ['~/assets/css/main.css'],
 	compatibilityDate: '2025-07-15',
 	eslint: {
 		config: {

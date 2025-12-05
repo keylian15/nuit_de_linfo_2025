@@ -1,42 +1,33 @@
 <template>
-	<div>
-		<li>
-			<input
-				v-model="checking"
-				type="checkbox"
-				value="t1"
-				class="check1"
-			>
-			<label for="check1" />
-			<input
-				v-model="checking"
-				type="checkbox"
-				value="t2"
-				class="check2"
-			>
-			<label for="check2" />
-		</li>
-	</div>
-	{{ text1 }}
-	{{ text2 }}
+	<UCheckboxGroup
+		v-model="value"
+		variant="card"
+		indicator="hidden"
+		:items="items"
+	/>
+	<UPageCard
+		title="Pièces cassées"
+		:description="desc"
+		variant="soft"
+	/>
 </template>
 
 <script setup>
-const checking = ref([]);
-const text1 = ref('');
-const text2 = ref('');
-if (text1.value in checking.value) {
-	text1.value = 'text1';
-}
-else {
-	text1.value = '';
-}
-if (text2.value in checking.value) {
-	text2.value = 'text2';
-}
-else {
-	text2.value = '';
-}
+const desc = ref('');
+const items = ref(['Processeur', 'Carte Graphique', 'Mémoire Vive']);
+const value = ref(['']);
+watch(value, () => {
+	desc.value = '';
+	if (value.value.includes('Processeur')) {
+		desc.value += '\nLe processeur est cassé';
+	}
+	if (value.value.includes('Carte Graphique')) {
+		desc.value += '\nLa carte graphique est cassée';
+	}
+	if (value.value.includes('Mémoire Vive')) {
+		desc.value += '\nLa mémoire vive est cassée';
+	}
+}, { deep: true });
 </script>
 
 <style>
