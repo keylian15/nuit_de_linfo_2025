@@ -26,26 +26,29 @@
 						label="Année"
 						:required="true"
 					>
-						<select
-							v-model="annee"
-							class="native-select"
-							@change="validateAnnee"
-						>
-							<option
-								value=""
-								disabled
-								selected
+						<div class="year-container">
+							<div class="year-inputs">
+								<input
+									v-for="(digit, index) in yearDigits"
+									:key="index"
+									type="number"
+									:value="digit"
+									class="year-digit-input"
+									:class="{ animating: isAnimating }"
+									readonly
+									min="0"
+									max="9"
+								>
+							</div>
+							<button
+								type="button"
+								class="spin-btn"
+								:disabled="isAnimating"
+								@click="animateYear"
 							>
-								Sélectionner une année
-							</option>
-							<option
-								v-for="year in anneesDisponibles"
-								:key="year"
-								:value="year"
-							>
-								{{ year }}
-							</option>
-						</select>
+								🎲
+							</button>
+						</div>
 					</UFormField>
 					<p
 						v-if="anneeError"
@@ -205,49 +208,65 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
-// --- GÉNÉRATION DES ANNÉES (Inchagé) ---
-const MIN_YEAR = 1950;
+const MIN_YEAR = 1700;
 const MAX_YEAR = 2025;
-const COUNT = 5;
+
 function getRandomInt(min: number, max: number): number {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function generateRandomYears(count: number): string[] {
-	const years = new Set<number>();
-	while (years.size < count) {
-		years.add(getRandomInt(MIN_YEAR, MAX_YEAR));
-	}
-	return Array.from(years).map(year => String(year)).sort((a, b) => b.localeCompare(a));
-}
-// Quand tu va valider ton formulaire :
-// Appeler la fonction inverser(mdp_inversé)
-// inverser mot de passe === valeur recup
+
 function inverser(inputString: string) {
 	const reversedString = inputString.split('').reverse().join('');
 	console.log(reversedString);
-
 	return reversedString;
 }
 
-const anneesDisponibles = ref<string[]>(generateRandomYears(COUNT));
+const yearDigits = ref<number[]>([0, 0, 0, 0]);
+const isAnimating = ref(false);
+const annee = ref<string>('');
 
-// --- DATA DU FORMULAIRE ---
+function animateYear() {
+	isAnimating.value = true;
+	const targetYear = getRandomInt(MIN_YEAR, MAX_YEAR);
+	const targetDigits = String(targetYear)
+		.split('')
+		.map(d => parseInt(d));
+
+	let frame = 0;
+	const totalFrames = 30;
+
+	const interval = setInterval(() => {
+		if (frame >= totalFrames) {
+			yearDigits.value = targetDigits;
+			annee.value = String(targetYear);
+			isAnimating.value = false;
+			validateAnnee();
+			clearInterval(interval);
+		}
+		else {
+			yearDigits.value = yearDigits.value.map(() => getRandomInt(0, 9));
+			frame++;
+		}
+	}, 50);
+}
+
+onMounted(() => {
+	animateYear();
+});
+
 const nom = ref('');
 const prenom = ref('');
 const age = ref('');
-const annee = ref<string>('');
 const email = ref('');
 const mdp = ref('');
 const mdp_verif = ref('');
 
-// --- DATA Sexe (Checkboxes) ---
 const sexeFemme = ref(false);
 const sexeHomme = ref(false);
 const sexeNonBinaire = ref(false);
 
-// --- ÉTATS D'ERREUR ---
 const nomError = ref<string | undefined>(undefined);
 const ageError = ref<string | undefined>(undefined);
 const prenomError = ref<string | undefined>(undefined);
@@ -259,11 +278,9 @@ const mdp_verifError = ref<string | undefined>(undefined);
 
 const requiredMessage = 'Ce champ est obligatoire.';
 
-// --- LOGIQUE SPÉCIFIQUE DES CHECKBOXES SEXE (Radio Button Simulation) ---
 type SexeType = 'femme' | 'homme' | 'nonbinaire';
 
 function handleSexeChange(changed: SexeType) {
-	// Si l'utilisateur coche une case, on décoche les autres
 	if (changed === 'femme' && sexeFemme.value) {
 		sexeHomme.value = false;
 		sexeNonBinaire.value = false;
@@ -279,8 +296,6 @@ function handleSexeChange(changed: SexeType) {
 	validateSexe();
 }
 
-// --- LOGIQUE DE VALIDATION ---
-
 function validateNom() {
 	nomError.value = nom.value.trim() === '' ? requiredMessage : undefined;
 }
@@ -294,11 +309,13 @@ function validateMdp() {
 }
 
 function validatePrenom() {
-	prenomError.value = prenom.value.trim() === '' ? requiredMessage : undefined;
+	prenomError.value
+		= prenom.value.trim() === '' ? requiredMessage : undefined;
 }
 
 function validateMdp_verif() {
-	mdp_verifError.value = mdp_verif.value.trim() === '' ? requiredMessage : undefined;
+	mdp_verifError.value
+		= mdp_verif.value.trim() === '' ? requiredMessage : undefined;
 	const valeur = inverser(mdp_verif.value);
 	if (valeur != mdp.value) {
 		mdp_verifError.value = 'Le mot de passe n\'est pas le même';
@@ -310,8 +327,11 @@ function validateAnnee() {
 }
 
 function validateSexe() {
-	const isChecked = sexeFemme.value || sexeHomme.value || sexeNonBinaire.value;
-	sexeError.value = !isChecked ? 'Veuillez sélectionner une option.' : undefined;
+	const isChecked
+		= sexeFemme.value || sexeHomme.value || sexeNonBinaire.value;
+	sexeError.value = !isChecked
+		? 'Veuillez sélectionner une option.'
+		: undefined;
 }
 
 function validateEmail() {
@@ -337,13 +357,27 @@ function validateAll(): boolean {
 	validateAge();
 	validateMdp_verif();
 
-	return !nomError.value && !anneeError.value && !sexeError.value && !emailError.value;
+	return (
+		!nomError.value
+		&& !anneeError.value
+		&& !sexeError.value
+		&& !emailError.value
+	);
 }
 
 function handleSubmit() {
 	if (validateAll()) {
-		const sexe = sexeFemme.value ? 'Femme' : sexeHomme.value ? 'Homme' : 'Non-binaire';
-		console.log('Formulaire valide. Données :', { nom: nom.value, annee: annee.value, sexe: sexe, email: email.value });
+		const sexe = sexeFemme.value
+			? 'Femme'
+			: sexeHomme.value
+				? 'Homme'
+				: 'Non-binaire';
+		console.log('Formulaire valide. Données :', {
+			nom: nom.value,
+			annee: annee.value,
+			sexe: sexe,
+			email: email.value,
+		});
 		alert('Formulaire envoyé avec succès!');
 	}
 	else {
@@ -353,31 +387,101 @@ function handleSubmit() {
 </script>
 
 <style scoped>
-/*
- * Nouvelle approche CSS pour garantir un carré parfait en forçant la taille.
- */
+.year-container {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
 
-/* 🚨 STYLE CRITIQUE POUR LES CASES CARRÉES */
+.year-inputs {
+	display: flex;
+	gap: 8px;
+	flex: 1;
+}
+
+.year-digit-input {
+	width: 50px;
+	height: 40px;
+	text-align: center;
+	font-size: 1.25rem;
+	font-weight: bold;
+	border: 1px solid #d1d5db;
+	border-radius: 0.375rem;
+	background-color: white;
+	color: #000000;
+	cursor: default;
+	transition: all 0.3s ease;
+}
+
+.year-digit-input.animating {
+	animation: digitSpin 0.1s ease-in-out infinite;
+	background-color: #f3f4f6;
+	color: #000000;
+}
+
+.spin-btn {
+	width: 40px;
+	height: 40px;
+	font-size: 1.25rem;
+	background-color: #3b82f6;
+	color: white;
+	border: none;
+	border-radius: 0.375rem;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.spin-btn:hover:not(:disabled) {
+	background-color: #2563eb;
+	transform: scale(1.05);
+}
+
+.spin-btn:active:not(:disabled) {
+	transform: scale(0.95);
+}
+
+.spin-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+@keyframes digitSpin {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-3px);
+	}
+}
+
+.year-digit-input::-webkit-outer-spin-button,
+.year-digit-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.year-digit-input[type='number'] {
+	-moz-appearance: textfield;
+}
+
 .custom-square-checkbox :deep(.ring-gray-300),
 .custom-square-checkbox :deep(.ring-primary-500),
 .custom-square-checkbox :deep(.bg-white) {
-	/* Ajout du ciblage du fond blanc si existant */
-	/* Force le carré et supprime le rayon */
 	width: 1rem !important;
 	height: 1rem !important;
 	border-radius: 0 !important;
 	border: 1px solid #d1d5db !important;
-	/* Assurez-vous que le fond est blanc lorsqu'il n'est PAS coché */
 	background-color: white !important;
 }
 
-/* 🚨 Cache l'icône de coche par défaut lorsque la case est cochée (si elle est l'élément qui chevauche) */
 .custom-square-checkbox :deep(.w-3.h-3) {
-	/* Cache l'icône pour que seul le fond coloré du carré soit visible si coché */
 	display: none !important;
 }
 
-/* --- Styles Généraux (Inchangés) --- */
 .form-container {
 	max-width: 600px;
 	margin: 40px auto;
