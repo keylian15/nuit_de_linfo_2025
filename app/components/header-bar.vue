@@ -26,6 +26,11 @@ const items = computed<NavigationMenuItem[]>(() => [
 		to: '/mentions',
 		active: route.path === '/mentions',
 	},
+	{
+		label: 'Formulaires',
+		to: '/formulaire',
+		active: route.path === '/formulaire',
+	},
 ]);
 
 // Charger le token depuis localStorage au montage
