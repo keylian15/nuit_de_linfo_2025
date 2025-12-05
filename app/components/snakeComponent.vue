@@ -149,6 +149,12 @@
 				>
 					🔄 Rejouer
 				</button>
+				<button
+					class="restart-button secondary"
+					@click="backToMenu"
+				>
+					⚙️ Changer de difficulté
+				</button>
 			</div>
 
 			<div
@@ -699,6 +705,17 @@ const restartGame = () => {
 	level.value = 1;
 	gameWon.value = false;
 	startGame();
+};
+
+const backToMenu = () => {
+	gameStarted.value = false;
+	gameOver.value = false;
+	gameWon.value = false;
+	level.value = 1;
+	score.value = 0;
+	neonMode.value = false;
+	godMode.value = false;
+	speedChallenge.value = false;
 };
 
 const nextLevel = () => {
